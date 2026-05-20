@@ -5,17 +5,19 @@ import { useStore } from '../store/useStore';
 import { Sidebar } from '../components/Sidebar';
 import { DocumentCard } from '../components/DocumentCard';
 import { PreviewModal } from '../components/PreviewModal';
+import { UploadModal } from '../components/UploadModal';
 import type { Document } from '../types';
 
 export const MainPage: React.FC = () => {
   const {
     user, documents, folders, currentFolder, loading, uploading,
-    searchQuery, fetchFolders, fetchDocuments, uploadFile,
+    searchQuery, fetchFolders, fetchDocuments,
     setSearchQuery, setCurrentFolder,
   } = useStore();
 
   const [preview, setPreview] = useState<Document | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -32,8 +34,8 @@ export const MainPage: React.FC = () => {
     : documents;
 
   const handleFiles = (files: FileList | null) => {
-    if (!files) return;
-    Array.from(files).forEach((f) => uploadFile(f, currentFolder));
+    if (!files || files.length === 0) return;
+    setPendingFiles(Array.from(files));
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -160,6 +162,15 @@ export const MainPage: React.FC = () => {
 
       {/* Preview modal */}
       {preview && <PreviewModal doc={preview} onClose={() => setPreview(null)} />}
+
+      {/* Upload modal */}
+      {pendingFiles.length > 0 && (
+        <UploadModal
+          files={pendingFiles}
+          folderId={currentFolder}
+          onClose={() => { setPendingFiles([]); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+        />
+      )}
     </div>
   );
 };

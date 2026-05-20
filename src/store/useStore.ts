@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import type { Folder, Document } from '../types';
+import type { Folder, Document, UploadMeta } from '../types';
 import type { User } from '@supabase/supabase-js';
 
 interface State {
@@ -19,7 +19,7 @@ interface State {
   fetchDocuments: (folderId: string | null) => Promise<void>;
   createFolder: (name: string, parentId: string | null) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
-  uploadFile: (file: File, folderId: string | null) => Promise<void>;
+  uploadFile: (file: File, folderId: string | null, customName?: string, meta?: UploadMeta) => Promise<void>;
   renameDocument: (id: string, name: string) => Promise<void>;
   moveDocument: (id: string, folderId: string | null) => Promise<void>;
   deleteDocument: (id: string, filePath: string) => Promise<void>;
@@ -71,7 +71,7 @@ export const useStore = create<State>((set, get) => ({
     await get().fetchFolders();
   },
 
-  uploadFile: async (file, folderId) => {
+  uploadFile: async (file, folderId, customName, meta) => {
     const { user } = get();
     if (!user) return;
     set({ uploading: true });
@@ -81,13 +81,18 @@ export const useStore = create<State>((set, get) => ({
       const { error: upErr } = await supabase.storage.from('documents').upload(path, file);
       if (upErr) throw upErr;
       await supabase.from('documents').insert({
-        name: file.name,
+        name: customName ?? file.name,
         file_path: path,
         file_type: file.type || ext || 'unknown',
         file_size: file.size,
         folder_id: folderId,
         uploaded_by: user.id,
         uploader_email: user.email,
+        doc_id: meta?.docId ?? null,
+        description: meta?.description ?? null,
+        category: meta?.category ?? null,
+        tags: meta?.tags ?? null,
+        expiry_date: meta?.expiryDate ?? null,
       });
       await get().fetchDocuments(folderId);
     } finally {

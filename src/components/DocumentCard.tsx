@@ -74,6 +74,20 @@ export const DocumentCard: React.FC<Props> = ({ doc, onPreview }) => {
               <p className="text-sm font-medium text-slate-800 truncate">{doc.name}</p>
             )}
             <p className="text-xs text-slate-400 mt-0.5">{formatBytes(doc.file_size)} · {format(new Date(doc.created_at), 'MMM d, yyyy')}</p>
+            {doc.doc_id && <p className="text-xs text-slate-400 font-mono">#{doc.doc_id}</p>}
+            {doc.category && (
+              <span className="inline-block mt-1 text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md">{doc.category}</span>
+            )}
+            {doc.tags && doc.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {doc.tags.map((tag) => (
+                  <span key={tag} className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md">{tag}</span>
+                ))}
+              </div>
+            )}
+            {doc.expiry_date && (
+              <p className="text-xs text-amber-500 mt-0.5">Expires {format(new Date(doc.expiry_date), 'MMM d, yyyy')}</p>
+            )}
           </div>
 
           {/* Menu */}

@@ -15,6 +15,19 @@ export interface Document {
   folder_id: string | null;
   uploaded_by: string;
   uploader_email?: string;
+  doc_id?: string;
+  description?: string;
+  category?: string;
+  tags?: string[];
+  expiry_date?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface UploadMeta {
+  docId?: string;
+  description?: string;
+  category?: string;
+  tags?: string[];
+  expiryDate?: string;
 }
