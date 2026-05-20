@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, Upload, LogOut, Loader2, FolderOpen, X } from 'lucide-react';
+import { Search, Upload, LogOut, Loader2, FolderOpen, X, Hash } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 import { Sidebar } from '../components/Sidebar';
@@ -18,6 +18,8 @@ export const MainPage: React.FC = () => {
   const [preview, setPreview] = useState<Document | null>(null);
   const [dragging, setDragging] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [docIdQuery, setDocIdQuery] = useState('');
+  const [docIdError, setDocIdError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -25,12 +27,36 @@ export const MainPage: React.FC = () => {
     fetchDocuments(null);
   }, []);
 
+  const handleDocIdSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = docIdQuery.trim();
+    if (!val) return;
+    const { data } = await supabase
+      .from('documents')
+      .select('*')
+      .ilike('doc_id', val)
+      .limit(1)
+      .single();
+    if (data) {
+      setDocIdError(false);
+      setPreview(data as Document);
+    } else {
+      setDocIdError(true);
+    }
+  };
+
   const currentFolderName = currentFolder
     ? folders.find((f) => f.id === currentFolder)?.name ?? 'Folder'
     : 'All Documents';
 
   const filtered = searchQuery
-    ? documents.filter((d) => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? documents.filter(
+        (d) =>
+          d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (d.doc_id && d.doc_id.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (d.category && d.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (d.tags && d.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())))
+      )
     : documents;
 
   const handleFiles = (files: FileList | null) => {
@@ -66,6 +92,19 @@ export const MainPage: React.FC = () => {
               </button>
             )}
           </div>
+
+          {/* Doc ID quick lookup */}
+          <form onSubmit={handleDocIdSearch} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition">
+            <Hash className="w-4 h-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={docIdQuery}
+              onChange={(e) => { setDocIdQuery(e.target.value); setDocIdError(false); }}
+              placeholder="Doc ID…"
+              className="w-28 bg-transparent text-sm outline-none text-slate-700 placeholder-slate-400"
+            />
+            {docIdError && <span className="text-xs text-red-400">Not found</span>}
+          </form>
 
           <button
             onClick={() => fileInputRef.current?.click()}
